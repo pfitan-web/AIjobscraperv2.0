@@ -1,0 +1,5 @@
+{
+  "name": "AI Job Scraper",
+  "description": "An intelligent job scraping application that uses AI to score, categorize, and manage job offers from various sources, helping you streamline your job search process.",
+  "requestFramePermissions": []
+}
