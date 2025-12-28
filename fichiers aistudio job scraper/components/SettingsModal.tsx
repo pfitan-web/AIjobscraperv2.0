@@ -261,30 +261,88 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, 
 
         <div className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-grow space-y-6 sm:space-y-8 bg-white">
           
-          {activeTab === 'general' && (
-            <>
-                {/* Configuration Backend */}
-                <section>
-                    <h3 className="text-sm font-bold text-indigo-600 mb-4 uppercase tracking-wide flex items-center">
-                        <span className="w-2 h-2 bg-indigo-600 rounded-full mr-2"></span>
-                        Connexion Backend (Hugging Face / Local)
-                    </h3>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <label htmlFor="backend-url" className="block text-sm font-medium text-slate-700 mb-1">URL du Backend</label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="text"
-                                id="backend-url"
-                                ref={backendUrlInputRef}
-                                value={backendUrl}
-                                onChange={(e) => {
-                                    setBackendUrl(e.target.value);
-                                    setConnectionStatus('idle'); 
-                                }}
-                                placeholder="ex: https://votre-space.hf.space"
-                                className="w-full p-2.5 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm text-slate-600"
-                            />
-                            <button 
-                                onClick={handleTestConnection}
-                                disabled={connectionStatus === 'testing'}
-                                className="px-4 py-2.5 bg-slate
+          {activeTab === 'ai' && (
+        <div className="space-y-6">
+      
+        {/* Configuration du Modèle IA */}
+         <section className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+            <h3 className="text-sm font-bold text-indigo-700 mb-2 uppercase tracking-wide">Moteur d'Intelligence Artificielle</h3>
+            <label className="block text-xs text-indigo-600 mb-2">
+              Le scoring des offres utilise Groq (Llama 3.3) via votre backend.
+            </label>
+            <select
+               value={aiProvider}
+               onChange={(e) => setAiProvider(e.target.value as AIProvider)}
+               className="w-full p-2.5 bg-white border border-indigo-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 text-slate-700 font-medium"
+            >
+                 <option value="gemini">Gemini 1.5 Flash (Standard)</option>
+                 <option value="ollama">Groq (Llama 3.3 70B) - Ultra Rapide ⚡</option>
+             </select>
+         </section>
+
+         {/* CV Section */}
+         <section>
+             <h3 className="text-sm font-bold text-indigo-600 mb-4 uppercase tracking-wide">Mon CV</h3>
+          
+          {!cvFile ? (
+              <div className="bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:bg-slate-100 transition-colors">
+                  <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={handleCvUpload}
+                  />
+                  <button 
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingCv}
+                      className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition shadow-sm disabled:opacity-50"
+                  >
+                      {isUploadingCv ? (
+                        <div className="flex items-center">
+                          <SpinnerIcon className="w-4 h-4 mr-2 animate-spin"/> 
+                          <span>Analyse en cours...</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <UploadIcon className="w-4 h-4 mr-2"/>
+                          <span>Importer CV (PDF/Image)</span>
+                        </div>
+                      )}
+                  </button>
+                  <p className="text-xs text-slate-400 mt-2">Max 5Mo. Analyse via Backend Hugging Face.</p>
+                   {uploadError && <p className="text-xs text-red-500 mt-2 font-medium">{uploadError}</p>}
+              </div>
+          ) : (
+              <div className="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                  <div className="flex items-center overflow-hidden">
+                      <div className="w-10 h-10 bg-red-100 text-red-600 rounded-lg flex items-center justify-center flex-shrink-0 mr-3">
+                          <span className="font-bold text-xs">PDF</span>
+                      </div>
+                      <div className="min-w-0">
+                          <p className="text-sm font-medium text-slate-800 truncate">{cvFile.name}</p>
+                          <p className="text-xs text-slate-500">Prêt pour l'analyse</p>
+                      </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                      <button onClick={handleDeleteCv} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition">
+                          <TrashIcon className="w-4 h-4" />
+                      </button>
+                  </div>
+              </div>
+          )}
+      </section>
+
+      <section className="border-t border-slate-100 pt-6">
+          <h3 className="text-sm font-bold text-indigo-600 mb-2 uppercase tracking-wide">Critères d'analyse IA</h3>
+          <p className="text-sm text-slate-500 mb-3">Texte extrait de votre CV :</p>
+          <textarea
+              value={criteria}
+              onChange={(e) => setCriteria(e.target.value)}
+              rows={8}
+              placeholder="Le texte de votre CV apparaîtra ici après l'importation..."
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500"
+          />
+      </section>
+  </div>
+)}
