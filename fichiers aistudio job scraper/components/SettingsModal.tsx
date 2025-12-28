@@ -143,44 +143,44 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, 
     setUploadError(null);
 
     try {
-        // Préparation directe du fichier pour le backend Python
-        const formData = new FormData();
-        formData.append('file', file); // On envoie le fichier brut, c'est plus simple
+        const reader = new FileReader();
+        reader.readAsDataURL(file); 
+        reader.onload = async () => {
+            const base64String = reader.result as string;
+            const base64Data = base64String.split(',')[1];
+            
+            try {
+                // FORCE l'utilisation du backendUrl défini dans les paramètres
+                const cleanBackendUrl = backendUrl.trim().replace(/\/$/, "");
+                
+                // Appel au service qui communique avec votre Python sur Hugging Face
+                const extractedCriteria = await aiExtractCriteriaFromCV(
+                    base64Data, 
+                    file.type, 
+                    'gemini', // Le provider ici est juste un flag
+                    cleanBackendUrl
+                );
+                
+                setCriteria(extractedCriteria);
+                setCvFile({
+                    name: file.name,
+                    type: file.type,
+                    data: base64String,
+                    extractedCriteria: extractedCriteria
+                });
 
-        const cleanBackendUrl = backendUrl.trim().replace(/\/$/, "");
-        
-        const response = await fetch(`${cleanBackendUrl}/api/analyze-cv`, {
-            method: 'POST',
-            body: formData,
-            // Pas de headers Content-Type, le navigateur le met tout seul pour FormData
-        });
-
-        if (!response.ok) {
-            throw new Error(`Erreur serveur (${response.status}). Vérifiez les logs Hugging Face.`);
-        }
-
-        const data = await response.json();
-        
-        if (data.status === "success") {
-            setCriteria(data.analysis); // On remplit le champ texte
-            setCvFile({
-                name: file.name,
-                type: file.type,
-                data: "", // On ne stocke plus le base64 lourd ici pour tester
-                extractedCriteria: data.analysis
-            });
-        } else {
-            throw new Error(data.message || "L'analyse a échoué.");
-        }
-
-    } catch (err: any) {
-        console.error("Détail de l'erreur:", err);
-        setUploadError(err.message || "Erreur lors de l'envoi au backend.");
-    } finally {
+            } catch (err: any) {
+                setUploadError(err.message || "Erreur lors de l'analyse via le backend.");
+            } finally {
+                setIsUploadingCv(false);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+        };
+    } catch (error) {
         setIsUploadingCv(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        setUploadError("Erreur lors de la lecture du fichier.");
     }
-  };
+};
 
     try {
         const reader = new FileReader();
