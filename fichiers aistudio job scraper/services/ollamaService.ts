@@ -1,6 +1,8 @@
 import { JobOffer, JobCategory } from '../types';
 
-interface OllamaResponse { // Renommé de GeminiResponse pour être plus générique
+// On garde le nom "OllamaResponse" pour ne pas casser les types ailleurs, 
+// mais c'est bien la réponse de Groq/Llama 3.3
+interface OllamaResponse { 
   score: number;
   category: JobCategory;
   reasoning: string;
@@ -10,116 +12,68 @@ interface OllamaResponse { // Renommé de GeminiResponse pour être plus génér
 }
 
 /**
- * Score une offre d'emploi via le backend (qui appelle Ollama)
+ * Ce service appelle maintenant Llama 3.3 70B via votre backend Hugging Face (Groq)
  */
 export const scoreAndCategorizeJob = async (
   job: JobOffer,
   criteria: string,
-  backendUrl: string = 'http://localhost:3001',
+  backendUrl: string = 'https://patman4524-aijobscraper.hf.space', // Votre URL par défaut
   signal?: AbortSignal
 ): Promise<OllamaResponse> => {
   
+  // On appelle la nouvelle route Groq que nous avons créée dans app.py
   const endpoint = `${backendUrl}/api/score-job`;
-  console.log(`Scoring job via backend: ${endpoint}`);
+  console.log(`🚀 Scoring via Groq (Llama 3.3): ${endpoint}`);
   
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ job, criteria }),
-      signal // Pass signal
+      signal
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Backend error: ${response.status}`);
+      throw new Error(`Erreur Backend Groq: ${response.status}`);
     }
 
     const result = await response.json();
     
-    // Si le backend a retourné un fallback
-    if (result.fallback) {
-      console.warn('Ollama fallback activé');
-    }
-
+    // Le backend Python renvoie maintenant le JSON propre formaté par Groq
     return {
       score: result.score || 0,
       category: result.category || JobCategory.REVIEW,
       reasoning: result.reasoning || "Analyse non disponible",
       contractType: result.contractType,
       salaryRange: result.salaryRange,
-      keyHighlights: result.keyHighlights || []
+      keyHighlights: [] // Groq peut ne pas renvoyer ça par défaut si non demandé spécifiquement
     };
 
   } catch (error) {
     if ((error as Error).name === 'AbortError') throw error;
+    console.error('Erreur scoring Groq:', error);
     
-    console.error('Erreur scoring via backend:', error);
-    
-    // Fallback local basique
-    let errorMessage = `Impossible de scorer l'offre. Erreur: ${error instanceof Error ? error.message : 'Inconnue'}.`;
-    if (error instanceof Error && (error.message.includes('Failed to fetch') || error.message.includes('Network request failed'))) {
-      errorMessage = `Impossible de joindre le backend à l'URL configurée (${backendUrl}). Vérifiez que le serveur Node.js, Ollama (\`ollama serve\`) et votre tunnel Ngrok (si utilisé) sont bien lancés.`;
-    }
-
     return {
-      score: 50,
+      score: 0,
       category: JobCategory.REVIEW,
-      reasoning: errorMessage,
+      reasoning: "Erreur lors de l'appel à Groq/Llama 3.3 via le backend.",
       keyHighlights: []
     };
   }
 };
 
 /**
- * Analyse un CV via le backend (qui appelle Ollama)
+ * Analyse un CV via Groq (non utilisé pour le moment car on préfère Gemini pour les PDF, 
+ * mais prêt si vous envoyez du texte pur)
  */
 export const extractCriteriaFromCV = async (
   base64Data: string,
   mimeType: string,
-  backendUrl: string = 'http://localhost:3001',
+  backendUrl: string = 'https://patman4524-aijobscraper.hf.space',
   signal?: AbortSignal
 ): Promise<string> => {
-  
-  const endpoint = `${backendUrl}/api/analyze-cv`;
-  console.log('Analyzing CV via backend');
-  
-  try {
-    // Pour l'instant, on supporte uniquement le texte
-    if (mimeType.includes('image') || mimeType.includes('pdf')) {
-      throw new Error("Ollama ne supporte que les fichiers .txt pour l'instant via le backend. Utilisez Gemini pour les PDF/images.");
-    }
-
-    // Décoder le base64
-    const cvText = atob(base64Data);
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cvText }),
-      signal // Pass signal
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Backend error: ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.criteria || "Impossible d'extraire les critères du CV.";
-
-  } catch (error) {
-    if ((error as Error).name === 'AbortError') throw error;
-
-    console.error('Erreur analyse CV via backend:', error);
-    
-    if (error instanceof Error) {
-      if (error.message.includes('Failed to fetch') || error.message.includes('Network request failed')) {
-        throw new Error(`Impossible de joindre le backend à l'URL configurée (${backendUrl}). Vérifiez que le serveur Node.js et votre tunnel Ngrok (si utilisé) sont lancés.`);
-      }
-      throw error;
-    }
-    
-    throw new Error("Erreur technique lors de l'analyse du CV.");
-  }
+  // Pour le CV, on reste sur Gemini via analyze-cv car Groq ne lit pas les PDF nativement
+  // Cette fonction est gardée pour la compatibilité du code
+  console.warn("L'analyse CV via Groq n'est pas optimale pour les PDF. Utilisez Gemini.");
+  return "Veuillez utiliser Gemini pour l'analyse de CV (PDF).";
 };
