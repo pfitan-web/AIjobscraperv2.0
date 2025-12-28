@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { JobOffer, CvFile } from '../types';
 import { CloseIcon } from './icons/CloseIcon';
-import { GoogleGenAI } from "@google/genai";
 import { SpinnerIcon } from './icons/SpinnerIcon';
 import { LightningIcon } from './icons/LightningIcon';
 
@@ -21,41 +20,34 @@ export const JobDetailModal: React.FC<JobDetailModalProps> = ({ job, cvFile, onC
   const [imgError, setImgError] = useState(false);
 
   const handleGenerateCoverLetter = async () => {
-    if (!apiKey) return alert("Clé API manquante");
-    if (!cvFile && !job.reasoning) return alert("Veuillez d'abord uploader un CV dans les paramètres.");
+    // On ne vérifie plus la clé API ici car on utilise le backend
+    if (!cvFile) return alert("Veuillez d'abord uploader un CV dans les paramètres.");
     
     setIsGenerating(true);
     try {
-        const ai = new GoogleGenAI({ apiKey });
-        const contextData = cvFile ? cvFile.extractedCriteria : "Utilisateur sans CV uploadé, baser sur l'analyse.";
+        // On utilise l'URL de votre backend Hugging Face
+        const backendUrl = "https://patman4524-aijobscraper.hf.space"; 
         
-        const prompt = `
-            Rédige une lettre de motivation professionnelle, convaincante et personnalisée pour ce poste.
-            
-            POSTE:
-            Titre: ${title}
-            Entreprise: ${company}
-            Description: ${description}
-
-            CANDIDAT (Informations extraites du CV):
-            ${contextData}
-
-            INSTRUCTIONS:
-            - Ton : Professionnel, enthousiaste, direct.
-            - Structure : Introduction accrocheuse, Corps (Match compétences/besoins), Conclusion avec appel à l'action.
-            - Langue : Français.
-            - Format : Texte brut prêt à copier-coller (pas de markdown compliqué).
-        `;
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt
+        const response = await fetch(`${backendUrl}/api/generate-cover-letter`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jobDescription: description,
+                cvContext: cvFile.extractedCriteria,
+                jobTitle: title,
+                company: company
+            })
         });
-        
-        setCoverLetter(response.text);
-    } catch (e) {
-        console.error(e);
-        setCoverLetter("Erreur lors de la génération. Vérifiez votre clé API ou réessayez.");
+
+        const data = await response.json();
+        if (data.status === "success") {
+            setCoverLetter(data.letter);
+            setActiveTab('coverLetter');
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (err: any) {
+        alert("Erreur lors de la génération : " + err.message);
     } finally {
         setIsGenerating(false);
     }
