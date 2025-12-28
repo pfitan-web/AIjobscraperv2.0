@@ -403,10 +403,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ settings, onSave, 
                 </label>
                 <select
                   value={aiProvider}
-                  onChange={(e) => setAiProvider(e.target.value as AIProvider)}
+                  value={settings.aiModel} 
+                  onChange={(e) => setSettings({...settings, aiModel: e.target.value})}
                   className="w-full p-2.5 bg-white border border-indigo-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 text-slate-700 font-medium"
                 >
-                  <option value="gemini">Gemini 1.5 Flash (Standard)</option>
+                  <option value="gemini-3-flash">Gemini 3 Flash (Recommandé)</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
                   <option value="ollama">Groq (Llama 3.3 70B) - Ultra Rapide ⚡</option>
                 </select>
               </section>
