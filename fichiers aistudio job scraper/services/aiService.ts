@@ -48,7 +48,27 @@ export const extractCriteriaFromCV = async (
   backendUrl: string = "https://patman4524-aijobscraper.hf.space",
   signal?: AbortSignal
 ): Promise<string> => {
-  // Pour les CVs, on force toujours l'utilisation du Backend (Gemini via Python) 
-  // car c'est le seul qui gère bien les PDF de manière sécurisée sans clé API locale.
-  return await geminiService.extractCriteriaFromCV(base64Data, mimeType, signal);
+  
+  // 1. Conversion du Base64 en fichier réel (Blob) pour Python
+  const byteCharacters = atob(base64Data);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const fileBlob = new Blob([byteArray], { type: mimeType });
+
+  // 2. Utilisation de FormData (indispensable pour Python @app.post("/api/analyze-cv"))
+  const formData = new FormData();
+  formData.append('file', fileBlob, 'cv_upload.pdf');
+
+  const response = await fetch(`${backendUrl}/api/analyze-cv`, {
+    method: 'POST',
+    body: formData, // On envoie le FormData directement
+    signal
+  });
+
+  const data = await response.json();
+  if (data.status === "success") return data.analysis;
+  throw new Error(data.message || "Erreur analyse");
 };
