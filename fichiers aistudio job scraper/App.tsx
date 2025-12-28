@@ -243,11 +243,11 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {selectedJob && (
-        <JobDetailModal 
+     {selectedJob && (
+       <JobDetailModal 
             job={selectedJob} 
             cvFile={settings.cvFile} 
-            apiKey={process.env.API_KEY} 
+            // On supprime la ligne apiKey={process.env.API_KEY}
             onClose={() => setSelectedJob(null)} 
         />
       )}
