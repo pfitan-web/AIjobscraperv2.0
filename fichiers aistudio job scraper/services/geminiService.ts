@@ -1,8 +1,7 @@
-// services/geminiService.ts
-export const extractCriteriaFromCV = async (base64Data: string, mimeType: string): Promise<string> => {
-    throw new Error("Utilisez le backend Python via aiService");
+// Ce fichier est désactivé pour forcer le passage par le backend Python
+export const extractCriteriaFromCV = async () => { 
+    throw new Error("Action redirigée vers le backend."); 
 };
-
-export const scoreAndCategorizeJob = async (job: any, criteria: string): Promise<any> => {
-    return { score: 0, category: "À Étudier", reasoning: "Analyse via backend requise" };
+export const scoreAndCategorizeJob = async () => {
+    return { score: 0, category: "À Étudier", reasoning: "Analyse via backend" };
 };
