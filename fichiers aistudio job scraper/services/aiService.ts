@@ -14,8 +14,9 @@ export const scoreAndCategorizeJob = async (
   if (provider === 'ollama') {
     return await ollamaService.scoreAndCategorizeJob(job, criteria, backendUrl, signal);
   }
-  // Par défaut on peut utiliser le backend aussi pour le scoring Gemini si implémenté
-  return await geminiService.scoreAndCategorizeJob(job, criteria, signal);
+  // Pour le scoring Gemini, on pourrait créer une route dédiée, 
+  // mais pour l'instant on se concentre sur l'import CV
+  return { score: 0, category: JobCategory.REVIEW, reasoning: "Utilisez Groq pour le scoring." };
 };
 
 export const extractCriteriaFromCV = async (
@@ -25,6 +26,6 @@ export const extractCriteriaFromCV = async (
   backendUrl: string = "https://patman4524-aijobscraper.hf.space",
   signal?: AbortSignal
 ): Promise<string> => {
-  // On utilise TOUJOURS le service gemini qui est maintenant branché sur le backend Python
+  // On appelle la fonction de geminiService qui envoie au backend Python
   return await geminiService.extractCriteriaFromCV(base64Data, mimeType, signal);
 };
