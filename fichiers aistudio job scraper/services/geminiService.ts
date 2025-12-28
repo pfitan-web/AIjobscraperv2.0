@@ -5,12 +5,12 @@ export const extractCriteriaFromCV = async (
   mimeType: string,
   signal?: AbortSignal
 ): Promise<string> => {
-  // Récupération automatique de l'URL configurée dans les paramètres
+  // On récupère l'URL du backend depuis le stockage local
   const settings = JSON.parse(localStorage.getItem('job-scraper-settings') || '{}');
   const backendUrl = settings.backendUrl?.replace(/\/$/, "") || "https://patman4524-aijobscraper.hf.space";
 
   try {
-    // 1. Conversion du Base64 en Blob pour l'envoi de fichier
+    // 1. Conversion du Base64 en Blob (Fichier réel)
     const byteCharacters = atob(base64Data);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -19,7 +19,7 @@ export const extractCriteriaFromCV = async (
     const byteArray = new Uint8Array(byteNumbers);
     const fileBlob = new Blob([byteArray], { type: mimeType });
 
-    // 2. Préparation du FormData pour Python (FastAPI)
+    // 2. Préparation de l'envoi vers Python
     const formData = new FormData();
     formData.append('file', fileBlob, 'cv_upload.pdf');
 
@@ -29,26 +29,20 @@ export const extractCriteriaFromCV = async (
       signal
     });
 
-    if (!response.ok) {
-      throw new Error(`Le backend a répondu avec une erreur ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`Erreur serveur: ${response.status}`);
 
     const data = await response.json();
-    if (data.status === "success") {
-      return data.analysis;
-    } else {
-      throw new Error(data.message || "Erreur lors de l'analyse du CV");
-    }
+    if (data.status === "success") return data.analysis;
+    throw new Error(data.message || "Erreur lors de l'analyse");
 
   } catch (error: any) {
     if (error.name === 'AbortError') throw error;
-    console.error("Erreur GeminiService (Backend):", error);
+    console.error("Erreur GeminiService:", error);
     throw error;
   }
 };
 
-// Garder la structure pour le scoring (optionnel si vous utilisez Groq)
-export const scoreAndCategorizeJob = async (job: any, criteria: string, signal?: AbortSignal) => {
-    // Cette partie peut rester vide ou appeler une route de scoring Gemini sur votre backend
-    return { score: 0, category: JobCategory.REVIEW, reasoning: "Utilisez Groq pour le scoring." };
+// Fonction vide pour éviter les erreurs d'importation ailleurs
+export const scoreAndCategorizeJob = async () => {
+    return { score: 0, category: JobCategory.REVIEW, reasoning: "Indisponible" };
 };
